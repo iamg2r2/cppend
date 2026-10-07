@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eaf5ff">
+<title>C++ End Semester Practical Test</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div>
+      <div class="brand">C++ <span>END SEMESTER</span></div>
+      <div class="subbrand">Department of Computer Science · St. Joseph’s College (Autonomous), Tiruchirapalli</div>
+    </div>
+    <button id="teacherBtn" class="text-btn">Teacher</button>
+  </header>
+
+  <main id="studentView" class="page">
+    <section id="loginCard" class="card login-card">
+      <div class="soft-icon">C++</div>
+      <p class="eyebrow">END SEMESTER PRACTICAL TEST</p>
+      <h1>Ready for your<br><span>practical challenge?</span></h1>
+      <p class="lead">Enter your register number. Your questions are assigned once and your progress is saved automatically.</p>
+      <label for="regInput">Register number</label>
+      <div class="login-row">
+        <input id="regInput" maxlength="8" placeholder="26PCA142" autocomplete="off" autocapitalize="characters">
+        <button id="startBtn" class="primary">Enter Test <span>→</span></button>
+      </div>
+      <p id="loginMsg" class="msg"></p>
+      <div class="rule-grid">
+        <div><b>01</b><span>One attempt per student</span></div>
+        <div><b>02</b><span>Questions are assigned once</span></div>
+        <div><b>03</b><span>Progress resumes if you return</span></div>
+      </div>
+    </section>
+  </main>
+
+  <main id="examView" class="page hidden">
+    <section id="preExam" class="card pre-exam hidden"><div class="soft-icon">09</div><p class="eyebrow">EXAMINATION WINDOW</p><h2>The test has not started yet.</h2><p id="preExamText">The C++ End Semester Practical Test will begin at 9:00 AM.</p><div class="start-time">9:00 AM</div><div class="rule-grid"><div><b>01</b><span>Keep this page open</span></div><div><b>02</b><span>Use a stable internet connection</span></div><div><b>03</b><span>Your assigned questions are saved</span></div></div></section><section id="activeExam">
+    <section class="exam-top">
+      <div>
+        <p class="eyebrow">C++ END SEMESTER PRACTICAL TEST</p>
+        <h2 id="studentReg">—</h2>
+      </div>
+      <div class="timer-card">
+        <span>TIME REMAINING</span><strong id="timer">--:--:--</strong>
+      </div>
+    </section>
+
+    <div class="integrity-row">
+      <div id="integrityBadge" class="integrity ok">● Test integrity: normal</div>
+      <div id="saveState">Not saved yet</div>
+    </div>
+
+    <section id="questionTabs" class="question-tabs"></section>
+    <section id="questions"></section>
+
+    <div class="exam-actions">
+      <button id="prevBtn" class="secondary">← Previous</button>
+      <button id="nextBtn" class="primary">Save & Continue →</button>
+      <button id="submitBtn" class="submit-btn hidden">Submit Attempt</button>
+    </div>
+    <p class="exam-note">Your code and output photographs are stored with your attempt. Once submitted, your answers cannot be changed.</p>
+    </section>
+  </main>
+
+  <main id="teacherView" class="page hidden">
+    <section id="teacherLogin" class="card teacher-login">
+      <p class="eyebrow">TEACHER CONTROL</p>
+      <h1>Assessment<br><span>Dashboard</span></h1>
+      <label for="teacherPassword">Teacher password</label>
+      <input id="teacherPassword" type="password" placeholder="Enter password" autocomplete="current-password">
+      <button id="teacherLoginBtn" class="primary full">Open Dashboard →</button>
+      <p id="teacherMsg" class="msg"></p>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="dash-head">
+        <div><p class="eyebrow">TEACHER CONTROL</p><h2>C++ Practical Assessment</h2></div>
+        <div class="dash-actions"><button id="refreshBtn" class="secondary">Refresh</button><button id="csvBtn" class="primary">Download CSV</button></div>
+      </div>
+      <div class="stat-grid">
+        <div><strong id="totalCount">0</strong><span>Total Students</span></div>
+        <div><strong id="submittedCount">0</strong><span>Submitted</span></div>
+        <div><strong id="inProgressCount">0</strong><span>In Progress</span></div>
+        <div><strong id="flagCount">0</strong><span>Proctor Flags</span></div>
+      </div>
+      <div class="filter-row"><input id="studentSearch" placeholder="Search register number..."><select id="statusFilter"><option value="all">All status</option><option value="submitted">Submitted</option><option value="in_progress">In progress</option><option value="not_started">Not started</option></select><select id="warningFilter"><option value="all">All warnings</option><option value="flagged">Flagged</option><option value="clear">No flags</option></select></div>
+      <div class="table-card"><table><thead><tr><th>Register</th><th>Status</th><th>Q1</th><th>Q2</th><th>Warnings</th><th>Mid</th><th>End</th><th>Viva</th><th>Record</th><th></th></tr></thead><tbody id="gradeRows"></tbody></table></div>
+    </section>
+  </main>
+</div>
+
+<div id="warningModal" class="modal hidden"><div class="modal-card warning-modal"><div class="modal-icon">!</div><h2>Stay on the test screen</h2><p id="warningText">Leaving the examination screen has been recorded.</p><button id="warningClose" class="primary full">Return to Test</button></div></div>
+<div id="answerModal" class="modal hidden"><div class="modal-card large"><button id="closeModal" class="close">×</button><div id="modalContent"></div></div></div>
+
+<script src="app.js"></script>
+</body>
+</html>
