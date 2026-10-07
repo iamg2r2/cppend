@@ -1,4 +1,4 @@
-const SUPABASE_URL='YOUR_SUPABASE_URL';
+const SUPABASE_URL='https://oxcseacsvqcbrlxuesui.supabase.co';
 const SUPABASE_ANON_KEY='YOUR_SUPABASE_ANON_KEY';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let teacherToken=sessionStorage.getItem('cpp_teacher_token')||null;
