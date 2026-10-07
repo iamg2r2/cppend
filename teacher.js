@@ -1,5 +1,5 @@
 const SUPABASE_URL='https://oxcseacsvqcbrlxuesui.supabase.co';
-const SUPABASE_ANON_KEY='YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_ANON_KEY='sb_publishable_m_M2N3lRbQhMCzL97ZpD5Q_5CWoBMJn';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let teacherToken=sessionStorage.getItem('cpp_teacher_token')||null;
 let currentRows=[];
