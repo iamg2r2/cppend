@@ -19,7 +19,7 @@ The teacher portal is intentionally separate from the student portal. Open `/tea
 
 Teacher password: `g2r2rocks`
 
-The password is checked server-side against a bcrypt hash created by `supabase.sql`.
+The teacher password is `g2r2rocks` and is intentionally stored as plaintext for this classroom deployment, as requested.
 
 ## Supabase setup
 1. Open Supabase SQL Editor.

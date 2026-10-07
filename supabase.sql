@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto; -- used for secure session tokens; teacher password is intentionally plaintext for this classroom deployment
 
 -- ============================================================
 -- C++ END SEMESTER PRACTICAL TEST
@@ -135,10 +135,10 @@ begin
   end if;
 end $$;
 
--- Teacher account. Password: g2r2rocks. Stored as bcrypt hash.
--- The hash is created inside PostgreSQL; the plaintext password is never stored.
+-- Teacher account. Password: g2r2rocks.
+-- Classroom deployment requested: teacher password is stored as plaintext.
 insert into public.teachers(username,password_hash)
-values('g2r2',extensions.crypt('g2r2rocks',extensions.gen_salt('bf')))
+values('g2r2','g2r2rocks')
 on conflict(username) do update set password_hash=excluded.password_hash, active=true;
 
 -- Storage bucket for code/output photos. It is intentionally a simple public-read bucket
@@ -294,7 +294,7 @@ returns json language plpgsql security definer set search_path=public as $$
 declare t public.teachers; tok text;
 begin
   select * into t from public.teachers where username='g2r2' and active=true;
-  if not found or t.password_hash<>extensions.crypt(p_password,t.password_hash) then return json_build_object('ok',false,'message','Invalid teacher password.'); end if;
+  if not found or t.password_hash<>p_password then return json_build_object('ok',false,'message','Invalid teacher password.'); end if;
   tok=encode(gen_random_bytes(32),'hex');
   insert into public.teacher_sessions(token,teacher_id) values(tok,t.id);
   return json_build_object('ok',true,'token',tok,'expires_at',now()+interval '4 hours');
@@ -374,41 +374,3 @@ begin
   return json_build_object('ok',true,'multiple_session',other_count>0);
 end $$;
 grant execute on function public.heartbeat_with_session_check(uuid,text) to anon,authenticated;
-
-
--- ============================================================
--- Teacher exam schedule control
--- ============================================================
-create or replace function public.teacher_exam_settings(p_token text)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,extensions
-as $$
-declare es public.exam_settings;
-begin
-  if not public.is_teacher_token_valid(p_token) then return jsonb_build_object('ok',false,'message','Teacher session expired.'); end if;
-  select * into es from public.exam_settings where id=true;
-  return jsonb_build_object('ok',true,'settings',jsonb_build_object('title',es.title,'exam_start',es.exam_start,'exam_end',es.exam_end,'updated_at',es.updated_at));
-end $$;
-grant execute on function public.teacher_exam_settings(text) to anon,authenticated;
-
-create or replace function public.teacher_update_exam_schedule(p_token text,p_exam_start timestamptz,p_exam_end timestamptz,p_apply_active boolean default false)
-returns jsonb
-language plpgsql
-security definer
-set search_path=public,extensions
-as $$
-declare affected integer:=0;
-begin
-  if not public.is_teacher_token_valid(p_token) then return jsonb_build_object('ok',false,'message','Teacher session expired.'); end if;
-  if p_exam_end <= p_exam_start then return jsonb_build_object('ok',false,'message','End time must be later than start time.'); end if;
-  update public.exam_settings set exam_start=p_exam_start,exam_end=p_exam_end,updated_at=now() where id=true;
-  if p_apply_active then
-    update public.attempts set exam_start=p_exam_start,exam_end=p_exam_end
-    where status='in_progress';
-    get diagnostics affected = row_count;
-  end if;
-  return jsonb_build_object('ok',true,'affected_attempts',affected);
-end $$;
-grant execute on function public.teacher_update_exam_schedule(text,timestamptz,timestamptz,boolean) to anon,authenticated;

@@ -1,5 +1,5 @@
-const SUPABASE_URL='https://oxcseacsvqcbrlxuesui.supabase.co';
-const SUPABASE_ANON_KEY='sb_publishable_m_M2N3lRbQhMCzL97ZpD5Q_5CWoBMJn';
+const SUPABASE_URL='YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY='YOUR_SUPABASE_ANON_KEY';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 const ATTEMPT_KEY='cpp_practical_attempt';
 const SESSION_KEY='cpp_practical_session';

@@ -3,7 +3,6 @@ const SUPABASE_ANON_KEY='YOUR_SUPABASE_ANON_KEY';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let teacherToken=sessionStorage.getItem('cpp_teacher_token')||null;
 let currentRows=[];
-let currentSchedule=null;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 function show(el,on=true){if(el)el.classList.toggle('hidden',!on)}
@@ -17,36 +16,7 @@ async function teacherLogin(){
   teacherToken=data.token;
   sessionStorage.setItem('cpp_teacher_token',teacherToken);
   show($('teacherLogin'),false); show($('dashboard'),true);
-  await getSchedule();
   await getRows();
-}
-function localParts(iso){
-  const d=new Date(iso); const pad=n=>String(n).padStart(2,'0');
-  return {date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`};
-}
-function scheduleStatus(start,end){const n=Date.now(),s=new Date(start).getTime(),e=new Date(end).getTime();return n<s?'Not started':n<e?'Active':'Ended'}
-async function getSchedule(){
-  const {data,error}=await sb.rpc('teacher_exam_settings',{p_token:teacherToken});
-  if(error||!data?.ok){message($('scheduleMsg'),error?.message||data?.message||'Could not load exam schedule.');return}
-  currentSchedule=data.settings; const a=localParts(data.settings.exam_start), b=localParts(data.settings.exam_end);
-  $('examDate').value=a.date; $('examStartTime').value=a.time; $('examEndTime').value=b.time;
-  const st=scheduleStatus(data.settings.exam_start,data.settings.exam_end); const el=$('scheduleStatus'); el.textContent=st; el.className='status-pill '+(st==='Active'?'status-submitted':st==='Not started'?'status-progress':'status-none');
-}
-function scheduleValues(){
-  const date=$('examDate').value,start=$('examStartTime').value,end=$('examEndTime').value;
-  if(!date||!start||!end) throw new Error('Please enter the exam date, start time and end time.');
-  const s=new Date(`${date}T${start}:00`),e=new Date(`${date}T${end}:00`);
-  if(Number.isNaN(s.getTime())||Number.isNaN(e.getTime())||e<=s) throw new Error('End time must be later than start time.');
-  return {start:s.toISOString(),end:e.toISOString()};
-}
-async function saveSchedule(applyActive=false){
-  try{
-    const v=scheduleValues();
-    const {data,error}=await sb.rpc('teacher_update_exam_schedule',{p_token:teacherToken,p_exam_start:v.start,p_exam_end:v.end,p_apply_active:applyActive});
-    if(error||!data?.ok){alert(error?.message||data?.message||'Could not update exam schedule.');return}
-    message($('scheduleMsg'),applyActive?'Schedule updated and applied to active attempts.':'Schedule updated for new attempts.');
-    await getSchedule(); await getRows();
-  }catch(e){alert(e.message)}
 }
 async function getRows(){
   if(!teacherToken)return;
@@ -124,7 +94,7 @@ async function csv(){
 function logout(){sessionStorage.removeItem('cpp_teacher_token');teacherToken=null;show($('dashboard'),false);show($('teacherLogin'),true);message($('teacherMsg'),'');$('teacherPassword').value='';}
 $('teacherLoginBtn').onclick=teacherLogin;
 $('teacherPassword').addEventListener('keydown',e=>{if(e.key==='Enter')teacherLogin()});
-$('refreshBtn').onclick=async()=>{await getSchedule();await getRows()}; $('saveScheduleBtn').onclick=()=>saveSchedule(false); $('applyActiveBtn').onclick=()=>{if(confirm('Apply this schedule to all currently active attempts?'))saveSchedule(true)}; $('csvBtn').onclick=csv; $('logoutBtn').onclick=logout;
+$('refreshBtn').onclick=getRows; $('csvBtn').onclick=csv; $('logoutBtn').onclick=logout;
 $('backBtn').onclick=()=>location.href='index.html'; $('closeModal').onclick=()=>show($('answerModal'),false);
 $('studentSearch').oninput=renderRows; $('statusFilter').onchange=renderRows; $('warningFilter').onchange=renderRows;
 window.viewStudent=viewStudent; window.gradeFromModal=gradeFromModal; window.resetStudent=resetStudent;
