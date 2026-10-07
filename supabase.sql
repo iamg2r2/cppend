@@ -295,7 +295,7 @@ declare t public.teachers; tok text;
 begin
   select * into t from public.teachers where username='g2r2' and active=true;
   if not found or t.password_hash<>p_password then return json_build_object('ok',false,'message','Invalid teacher password.'); end if;
-  tok=encode(gen_random_bytes(32),'hex');
+  tok=encode(extensions.gen_random_bytes(32),'hex');
   insert into public.teacher_sessions(token,teacher_id) values(tok,t.id);
   return json_build_object('ok',true,'token',tok,'expires_at',now()+interval '4 hours');
 end $$;
