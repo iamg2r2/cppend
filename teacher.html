@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eaf5ff">
+<title>Teacher Dashboard · C++ Practical Test</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar"><div><div class="brand">C++ <span>TEACHER PANEL</span></div><div class="subbrand">End Semester Practical Assessment</div></div><button id="backBtn" class="text-btn">← Student Portal</button></header>
+<main id="teacherView" class="page">
+<section id="teacherLogin" class="card teacher-login"><p class="eyebrow">TEACHER CONTROL</p><h1>Assessment<br><span>Dashboard</span></h1><label for="teacherPassword">Teacher password</label><input id="teacherPassword" type="password" placeholder="Enter password" autocomplete="current-password"><button id="teacherLoginBtn" class="primary full">Open Dashboard →</button><p id="teacherMsg" class="msg"></p></section>
+<section id="dashboard" class="hidden"><div class="dash-head"><div><p class="eyebrow">TEACHER CONTROL</p><h2>C++ Practical Assessment</h2></div><div class="dash-actions"><button id="refreshBtn" class="secondary">Refresh</button><button id="csvBtn" class="primary">Download CSV</button><button id="logoutBtn" class="secondary">Log out</button></div></div>
+<section class="card schedule-card">
+  <div class="schedule-head"><div><p class="eyebrow">EXAMINATION CONTROL</p><h3>Exam Schedule</h3><p class="muted">Change the date and time used by the student portal. Times use your browser's local timezone.</p></div><span id="scheduleStatus" class="status-pill status-none">Loading…</span></div>
+  <div class="schedule-grid">
+    <label>Date<input id="examDate" type="date"></label>
+    <label>Start time<input id="examStartTime" type="time"></label>
+    <label>End time<input id="examEndTime" type="time"></label>
+    <div class="schedule-actions"><button id="saveScheduleBtn" class="primary">Save Schedule</button><button id="applyActiveBtn" class="secondary">Apply to Active Attempts</button></div>
+  </div>
+  <p id="scheduleMsg" class="msg"></p>
+</section>
+<div class="stat-grid"><div><strong id="totalCount">0</strong><span>Total Students</span></div><div><strong id="submittedCount">0</strong><span>Submitted</span></div><div><strong id="inProgressCount">0</strong><span>In Progress</span></div><div><strong id="flagCount">0</strong><span>Proctor Flags</span></div></div>
+<div class="filter-row"><input id="studentSearch" placeholder="Search register number..."><select id="statusFilter"><option value="all">All status</option><option value="submitted">Submitted</option><option value="in_progress">In progress</option><option value="not_started">Not started</option></select><select id="warningFilter"><option value="all">All warnings</option><option value="flagged">Flagged</option><option value="clear">No flags</option></select></div>
+<div class="table-card"><table><thead><tr><th>Register</th><th>Status</th><th>Q1</th><th>Q2</th><th>Warnings</th><th>Mid</th><th>End</th><th>Viva</th><th>Record</th><th></th></tr></thead><tbody id="gradeRows"></tbody></table></div></section>
+</main></div>
+<div id="answerModal" class="modal hidden"><div class="modal-card large"><button id="closeModal" class="close">×</button><div id="modalContent"></div></div></div>
+<script src="teacher.js"></script>
+</body></html>

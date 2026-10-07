@@ -15,7 +15,7 @@
       <div class="brand">C++ <span>END SEMESTER</span></div>
       <div class="subbrand">Department of Computer Science · St. Joseph’s College (Autonomous), Tiruchirapalli</div>
     </div>
-    <button id="teacherBtn" class="text-btn">Teacher</button>
+    
   </header>
 
   <main id="studentView" class="page">
@@ -67,31 +67,7 @@
     </section>
   </main>
 
-  <main id="teacherView" class="page hidden">
-    <section id="teacherLogin" class="card teacher-login">
-      <p class="eyebrow">TEACHER CONTROL</p>
-      <h1>Assessment<br><span>Dashboard</span></h1>
-      <label for="teacherPassword">Teacher password</label>
-      <input id="teacherPassword" type="password" placeholder="Enter password" autocomplete="current-password">
-      <button id="teacherLoginBtn" class="primary full">Open Dashboard →</button>
-      <p id="teacherMsg" class="msg"></p>
-    </section>
 
-    <section id="dashboard" class="hidden">
-      <div class="dash-head">
-        <div><p class="eyebrow">TEACHER CONTROL</p><h2>C++ Practical Assessment</h2></div>
-        <div class="dash-actions"><button id="refreshBtn" class="secondary">Refresh</button><button id="csvBtn" class="primary">Download CSV</button></div>
-      </div>
-      <div class="stat-grid">
-        <div><strong id="totalCount">0</strong><span>Total Students</span></div>
-        <div><strong id="submittedCount">0</strong><span>Submitted</span></div>
-        <div><strong id="inProgressCount">0</strong><span>In Progress</span></div>
-        <div><strong id="flagCount">0</strong><span>Proctor Flags</span></div>
-      </div>
-      <div class="filter-row"><input id="studentSearch" placeholder="Search register number..."><select id="statusFilter"><option value="all">All status</option><option value="submitted">Submitted</option><option value="in_progress">In progress</option><option value="not_started">Not started</option></select><select id="warningFilter"><option value="all">All warnings</option><option value="flagged">Flagged</option><option value="clear">No flags</option></select></div>
-      <div class="table-card"><table><thead><tr><th>Register</th><th>Status</th><th>Q1</th><th>Q2</th><th>Warnings</th><th>Mid</th><th>End</th><th>Viva</th><th>Record</th><th></th></tr></thead><tbody id="gradeRows"></tbody></table></div>
-    </section>
-  </main>
 </div>
 
 <div id="warningModal" class="modal hidden"><div class="modal-card warning-modal"><div class="modal-icon">!</div><h2>Stay on the test screen</h2><p id="warningText">Leaving the examination screen has been recorded.</p><button id="warningClose" class="primary full">Return to Test</button></div></div>
