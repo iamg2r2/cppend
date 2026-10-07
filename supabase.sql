@@ -19,7 +19,7 @@ create table if not exists public.exam_settings (
 
 -- CHANGE THESE TWO VALUES before the examination.
 insert into public.exam_settings(id,exam_start,exam_end)
-values (true, '2026-10-07 09:00:00+05:30', '2026-10-07 11:00:00+05:30')
+values (true, '2026-10-08 09:00:00+05:30', '2026-10-08 11:00:00+05:30')
 on conflict(id) do update set exam_start=excluded.exam_start, exam_end=excluded.exam_end, updated_at=now();
 
 create table if not exists public.students (
