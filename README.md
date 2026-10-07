@@ -1,6 +1,7 @@
 # C++ End Semester Practical Test
 
 A GitHub Pages + Supabase web app for the Department of Computer Science C++ practical examination.
+cppendsempassword
 
 ## Student experience
 - Login with register number (`26PCA101`–`26PCA162`, excluding discontinued `26PCA104` and `26PCA155` (60 active students)).
