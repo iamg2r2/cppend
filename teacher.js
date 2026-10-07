@@ -17,6 +17,7 @@ async function teacherLogin(){
   sessionStorage.setItem('cpp_teacher_token',teacherToken);
   show($('teacherLogin'),false); show($('dashboard'),true);
   await getRows();
+  await loadSchedule();
 }
 async function getRows(){
   if(!teacherToken)return;
@@ -44,8 +45,8 @@ function renderRows(){
     return `<tr>
       <td><b>${esc(r.register_number)}</b></td>
       <td><span class="status-pill ${r.status==='submitted'?'status-submitted':r.status==='in_progress'?'status-progress':'status-none'}">${esc(r.status.replace('_',' '))}</span></td>
-      <td>${attempted?(r.code1?'✓':'—')+' '+(r.output1?'· ✓':''): '—'}</td>
-      <td>${attempted?(r.code2?'✓':'—')+' '+(r.output2?'· ✓':''): '—'}</td>
+      <td>${attempted?(r.evidence_url?'✓ evidence':'—'): '—'}</td>
+      <td>${attempted?(r.evidence_url?'✓ evidence':'—'): '—'}</td>
       <td class="${r.warning_count?'flag':''}">${r.warning_count||0}</td>
       <td>${attempted?`<input class="mark-input" id="m${r.attempt_id}" type="number" min="0" value="${r.mid}">`:'—'}</td>
       <td>${attempted?`<input class="mark-input" id="e${r.attempt_id}" type="number" min="0" value="${r.end_mark}">`:'—'}</td>
@@ -73,7 +74,7 @@ async function resetStudent(id){
 async function viewStudent(id){
   const r=currentRows.find(x=>x.attempt_id===id); if(!r)return;
   $('modalContent').innerHTML=`<p class="eyebrow">STUDENT SUBMISSION</p><h2>${esc(r.register_number)}</h2>
-  <div class="submission-grid"><div><h4>Question 1 · ${esc(r.q1_title||'')}</h4>${r.code1?`<img src="${esc(r.code1)}" alt="Code image">`:'<div class="empty-photo">No code photo</div>'}</div><div><h4>Question 1 · Output</h4>${r.output1?`<img src="${esc(r.output1)}" alt="Output image">`:'<div class="empty-photo">No output photo</div>'}</div><div><h4>Question 2 · ${esc(r.q2_title||'')}</h4>${r.code2?`<img src="${esc(r.code2)}" alt="Code image">`:'<div class="empty-photo">No code photo</div>'}</div><div><h4>Question 2 · Output</h4>${r.output2?`<img src="${esc(r.output2)}" alt="Output image">`:'<div class="empty-photo">No output photo</div>'}</div></div>
+  <div class="submission-grid"><div class="evidence-wide"><h4>Optional evidence image</h4>${r.evidence_url?`<img src="${esc(r.evidence_url)}" alt="Optional evidence image">`:'<div class="empty-photo">No image uploaded</div>'}</div></div>
   <div class="event-list"><h3>Proctor events (${r.warning_count||0})</h3>${(r.events||[]).map(e=>`<div class="event-row"><span>${esc(e.event_type.replaceAll('_',' '))}</span><span>${new Date(e.created_at).toLocaleTimeString()}</span></div>`).join('')||'<div class="event-row">No flagged events.</div>'}</div>
   <div class="marks-row"><label>Mid<input id="vmid" type="number" min="0" value="${r.mid}"></label><label>End<input id="vend" type="number" min="0" value="${r.end_mark}"></label><label>Viva<input id="vviva" type="number" min="0" value="${r.viva}"></label><label>Record<input id="vrecord" type="number" min="0" value="${r.record}"></label></div>
   <div class="modal-actions"><button class="secondary" onclick="resetStudent('${id}')">Reset Student</button><button class="primary" onclick="gradeFromModal('${id}')">Save Marks</button></div>`;
@@ -86,6 +87,9 @@ async function gradeFromModal(id){
   const r=currentRows.find(x=>x.attempt_id===id); if(r)Object.assign(r,{mid:vals[0],end_mark:vals[1],viva:vals[2],record:vals[3]});
   show($('answerModal'),false); renderRows();
 }
+function toLocalParts(iso){const d=new Date(iso);const pad=n=>String(n).padStart(2,'0');return {date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}}
+async function loadSchedule(){const {data,error}=await sb.rpc('teacher_schedule',{p_token:teacherToken});if(error||!data?.ok){message($('scheduleMsg'),error?.message||data?.message||'Could not load schedule.');return}const a=toLocalParts(data.exam_start),b=toLocalParts(data.exam_end);$('examDate').value=a.date;$('examStart').value=a.time;$('examEnd').value=b.time;message($('scheduleMsg'),'Current schedule loaded.');}
+async function saveSchedule(){const date=$('examDate').value,start=$('examStart').value,end=$('examEnd').value;if(!date||!start||!end){message($('scheduleMsg'),'Choose a date, start time and end time.');return}const startIso=`${date}T${start}:00+05:30`,endIso=`${date}T${end}:00+05:30`;const {data,error}=await sb.rpc('teacher_set_schedule',{p_token:teacherToken,p_exam_start:startIso,p_exam_end:endIso,p_apply_active:$('applyActive').checked});if(error||!data?.ok){message($('scheduleMsg'),error?.message||data?.message||'Could not save schedule.');return}message($('scheduleMsg'),`Schedule saved. ${data.active_attempts_updated||0} active attempt(s) updated.`);await getRows();}
 async function csv(){
   const {data,error}=await sb.rpc('teacher_csv',{p_token:teacherToken});
   if(error||!data?.ok){alert(error?.message||data?.message||'Could not create CSV');return}
@@ -94,8 +98,8 @@ async function csv(){
 function logout(){sessionStorage.removeItem('cpp_teacher_token');teacherToken=null;show($('dashboard'),false);show($('teacherLogin'),true);message($('teacherMsg'),'');$('teacherPassword').value='';}
 $('teacherLoginBtn').onclick=teacherLogin;
 $('teacherPassword').addEventListener('keydown',e=>{if(e.key==='Enter')teacherLogin()});
-$('refreshBtn').onclick=getRows; $('csvBtn').onclick=csv; $('logoutBtn').onclick=logout;
+$('refreshBtn').onclick=getRows; $('saveScheduleBtn').onclick=saveSchedule; $('csvBtn').onclick=csv; $('logoutBtn').onclick=logout;
 $('backBtn').onclick=()=>location.href='index.html'; $('closeModal').onclick=()=>show($('answerModal'),false);
 $('studentSearch').oninput=renderRows; $('statusFilter').onchange=renderRows; $('warningFilter').onchange=renderRows;
 window.viewStudent=viewStudent; window.gradeFromModal=gradeFromModal; window.resetStudent=resetStudent;
-if(teacherToken){show($('teacherLogin'),false);show($('dashboard'),true);getRows();}
+if(teacherToken){show($('teacherLogin'),false);show($('dashboard'),true);getRows();loadSchedule();}

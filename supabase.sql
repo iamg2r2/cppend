@@ -60,6 +60,13 @@ create table if not exists public.attempt_photos (
   unique(attempt_id,question_no,kind)
 );
 
+create table if not exists public.attempt_uploads (
+  id uuid primary key default gen_random_uuid(),
+  attempt_id uuid not null unique references public.attempts(id) on delete cascade,
+  public_url text not null,
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.proctor_events (
   id bigint generated always as identity primary key,
   attempt_id uuid not null references public.attempts(id) on delete cascade,
@@ -209,7 +216,8 @@ begin
          coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=1 and kind='code'),'') code1,
          coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=1 and kind='output'),'') output1,
          coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=2 and kind='code'),'') code2,
-         coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=2 and kind='output'),'') output2
+         coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=2 and kind='output'),'') output2,
+         coalesce((select public_url from public.attempt_uploads where attempt_id=a.id),'') evidence_url
   into r from public.attempts a join public.students s on s.id=a.student_id
   join public.questions q1 on q1.id=a.question1_id join public.questions q2 on q2.id=a.question2_id
   where a.id=p_attempt_id;
@@ -260,6 +268,60 @@ begin
   return json_build_object('ok',true);
 end $$;
 grant execute on function public.remove_photo(uuid,smallint,text) to anon,authenticated;
+
+create or replace function public.save_attempt_upload(p_attempt_id uuid,p_session_id text,p_url text)
+returns json language plpgsql security definer set search_path=public as $$
+begin
+  if not exists(select 1 from public.attempt_sessions where attempt_id=p_attempt_id and session_id=p_session_id) then
+    return json_build_object('ok',false,'message','Invalid attempt session.');
+  end if;
+  if not exists(select 1 from public.attempts where id=p_attempt_id and status='in_progress' and now() between exam_start and exam_end) then
+    return json_build_object('ok',false,'message','The examination window is closed.');
+  end if;
+  insert into public.attempt_uploads(attempt_id,public_url,updated_at)
+  values(p_attempt_id,p_url,now())
+  on conflict(attempt_id) do update set public_url=excluded.public_url,updated_at=now();
+  update public.attempts set started_at=coalesce(started_at,now()),last_saved_at=now() where id=p_attempt_id;
+  return json_build_object('ok',true);
+end $$;
+grant execute on function public.save_attempt_upload(uuid,text,text) to anon,authenticated;
+
+create or replace function public.remove_attempt_upload(p_attempt_id uuid,p_session_id text)
+returns json language plpgsql security definer set search_path=public as $$
+begin
+  if not exists(select 1 from public.attempt_sessions where attempt_id=p_attempt_id and session_id=p_session_id) then
+    return json_build_object('ok',false,'message','Invalid attempt session.');
+  end if;
+  delete from public.attempt_uploads where attempt_id=p_attempt_id;
+  return json_build_object('ok',true);
+end $$;
+grant execute on function public.remove_attempt_upload(uuid,text) to anon,authenticated;
+
+create or replace function public.teacher_set_schedule(p_token text,p_exam_start timestamptz,p_exam_end timestamptz,p_apply_active boolean default true)
+returns json language plpgsql security definer set search_path=public as $$
+declare changed integer:=0;
+begin
+  if not public.valid_teacher(p_token) then return json_build_object('ok',false,'message','Teacher session expired.'); end if;
+  if p_exam_end<=p_exam_start then return json_build_object('ok',false,'message','End time must be after start time.'); end if;
+  update public.exam_settings set exam_start=p_exam_start,exam_end=p_exam_end,updated_at=now() where id=true;
+  if p_apply_active then
+    update public.attempts set exam_start=p_exam_start,exam_end=p_exam_end
+    where status='in_progress';
+    get diagnostics changed = row_count;
+  end if;
+  return json_build_object('ok',true,'exam_start',p_exam_start,'exam_end',p_exam_end,'active_attempts_updated',changed);
+end $$;
+grant execute on function public.teacher_set_schedule(text,timestamptz,timestamptz,boolean) to anon,authenticated;
+
+create or replace function public.teacher_schedule(p_token text)
+returns json language plpgsql security definer set search_path=public as $$
+declare es public.exam_settings;
+begin
+  if not public.valid_teacher(p_token) then return json_build_object('ok',false,'message','Teacher session expired.'); end if;
+  select * into es from public.exam_settings where id=true;
+  return json_build_object('ok',true,'exam_start',es.exam_start,'exam_end',es.exam_end);
+end $$;
+grant execute on function public.teacher_schedule(text) to anon,authenticated;
 
 create or replace function public.submit_attempt(p_attempt_id uuid,p_session_id text,p_auto boolean default false)
 returns json language plpgsql security definer set search_path=public as $$
@@ -312,6 +374,7 @@ begin
       coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=1 and kind='output'),'') output1,
       coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=2 and kind='code'),'') code2,
       coalesce((select public_url from public.attempt_photos where attempt_id=a.id and question_no=2 and kind='output'),'') output2,
+      coalesce((select public_url from public.attempt_uploads where attempt_id=a.id),'') evidence_url,
       coalesce(g.mid,0) mid,coalesce(g.end_mark,0) end_mark,coalesce(g.viva,0) viva,coalesce(g.record,0) record,
       (select count(*) from public.proctor_events pe where pe.attempt_id=a.id and pe.event_type in('APP_BACKGROUND','WINDOW_BLUR','MULTIPLE_SESSION')) warning_count,
       coalesce((select json_agg(json_build_object('event_type',pe.event_type,'detail',pe.detail,'created_at',pe.created_at) order by pe.created_at) from public.proctor_events pe where pe.attempt_id=a.id),'[]'::json) events
@@ -343,6 +406,7 @@ begin
   delete from public.attempt_sessions where attempt_id=p_attempt_id;
   delete from public.proctor_events where attempt_id=p_attempt_id;
   delete from public.attempt_photos where attempt_id=p_attempt_id;
+  delete from public.attempt_uploads where attempt_id=p_attempt_id;
   delete from storage.objects where bucket_id='exam-submissions' and name like p_attempt_id::text || '/%';
   delete from public.attempts where id=p_attempt_id;
   return json_build_object('ok',true);
